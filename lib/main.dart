@@ -147,11 +147,11 @@ class _AddCardPageState extends State<AddCardPage> {
         _phoneController.text = phoneRegex.firstMatch(line)!.group(0)!;
         continue;
       }
-      if (company == null and isCompany(line)) {
+      if (company == null && isCompany(line)) {
         company = line;
         continue;
       }
-      if (name == null and isLikelyName(line)) {
+      if (name == null && isLikelyName(line)) {
         name = line;
         continue;
       }
