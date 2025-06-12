@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -93,6 +94,35 @@ class _AddCardPageState extends State<AddCardPage> {
   String orientation = 'horizontal';
   File? imageFile;
 
+  Future<void> _performOCR(File file) async {
+    final inputImage = InputImage.fromFile(file);
+    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    await textRecognizer.close();
+
+    final lines = recognizedText.text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final phoneRegex = RegExp(r'\+?[0-9\s\-]{7,}');
+    final emailRegex = RegExp(r'\S+@\S+\.\S+');
+
+    for (final line in lines) {
+      if (emailRegex.hasMatch(line) && _emailController.text.isEmpty) {
+        _emailController.text = emailRegex.firstMatch(line)!.group(0)!;
+        continue;
+      }
+      if (phoneRegex.hasMatch(line) && _phoneController.text.isEmpty) {
+        _phoneController.text = phoneRegex.firstMatch(line)!.group(0)!;
+        continue;
+      }
+    }
+    if (lines.isNotEmpty && _nameController.text.isEmpty) {
+      _nameController.text = lines.first;
+    }
+    if (lines.length > 1 && _companyController.text.isEmpty) {
+      _companyController.text = lines[1];
+    }
+    setState(() {});
+  }
+
   Future<void> _pickImage() async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.camera);
@@ -101,6 +131,7 @@ class _AddCardPageState extends State<AddCardPage> {
     final newPath = p.join(directory.path, p.basename(picked.path));
     final newImage = await File(picked.path).copy(newPath);
     setState(() => imageFile = newImage);
+    await _performOCR(newImage);
   }
 
   Future<void> _save() async {
