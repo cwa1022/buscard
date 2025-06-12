@@ -94,6 +94,7 @@ class _AddCardPageState extends State<AddCardPage> {
   String orientation = 'horizontal';
   File? imageFile;
 
+
   Future<void> _performOCR(File file) async {
     final inputImage = InputImage.fromFile(file);
 
@@ -114,14 +115,28 @@ class _AddCardPageState extends State<AddCardPage> {
 
     final combined = '${latinText.text}\n$chineseText'.trim();
     final lines = combined
-        .split('\n')
+        .split('\\n')
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList();
 
-    final phoneRegex = RegExp(r'\+?[0-9\s\-]{7,}');
-    final emailRegex = RegExp(r'\S+@\S+\.\S+');
-    final candidates = <String>[];
+    final phoneRegex =
+        RegExp(r'(\\+?\\d{1,4}[\\s-]?)?(\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}');
+    final emailRegex = RegExp(r'\\S+@\\S+\\.\\S+');
+
+    bool isCompany(String text) {
+      const keywords = ['公司', '企業', '股份', '有限公司', 'Inc', 'Corp', 'Co.', 'LLC'];
+      return keywords.any((k) => text.contains(k));
+    }
+
+    bool isLikelyName(String text) {
+      final zhName = RegExp(r'^[\\u4e00-\\u9fa5]{2,4}\\$');
+      final enName = RegExp(r'^[A-Z][a-z]+\\s[A-Z][a-z]+\\$');
+      return zhName.hasMatch(text) || enName.hasMatch(text);
+    }
+
+    String? name;
+    String? company;
 
     for (final line in lines) {
       if (emailRegex.hasMatch(line) && _emailController.text.isEmpty) {
@@ -132,15 +147,18 @@ class _AddCardPageState extends State<AddCardPage> {
         _phoneController.text = phoneRegex.firstMatch(line)!.group(0)!;
         continue;
       }
-      candidates.add(line);
+      if (company == null and isCompany(line)) {
+        company = line;
+        continue;
+      }
+      if (name == null and isLikelyName(line)) {
+        name = line;
+        continue;
+      }
     }
 
-    if (_nameController.text.isEmpty && candidates.isNotEmpty) {
-      _nameController.text = candidates.first;
-    }
-    if (_companyController.text.isEmpty && candidates.length > 1) {
-      _companyController.text = candidates[1];
-    }
+    _nameController.text = name ?? (lines.isNotEmpty ? lines.first : '');
+    _companyController.text = company ?? '';
 
     setState(() {});
   }

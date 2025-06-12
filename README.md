@@ -17,6 +17,7 @@ dependencies {
 ## Features
 - Capture an image using the device camera.
 - Automatically recognize text on the card using ML Kit and pre-fill details.
+- Improved heuristics detect phone numbers, emails, and likely name/company lines.
 - Store name, company, phone, email, orientation, and photo path in SQLite.
 - View saved cards in a list.
 
