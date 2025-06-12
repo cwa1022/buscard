@@ -1,16 +1,12 @@
 # buscard
 
-A new Flutter project.
+This sample Flutter app demonstrates a simple business card scanner.
+Users can capture photos of a card, select its orientation (horizontal or vertical),
+and store basic information in a local SQLite database along with the image path.
 
-## Getting Started
+## Features
+- Capture an image using the device camera.
+- Store name, company, phone, email, orientation, and photo path in SQLite.
+- View saved cards in a list.
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+This code serves as a minimal starting point and is not production ready.
