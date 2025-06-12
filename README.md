@@ -2,8 +2,9 @@
 
 This sample Flutter app demonstrates a simple business card scanner.
 Users can capture a photo of a card and the app performs basic OCR to prefill
-the name, company, phone, and email fields. Captured information and the
-image path are stored locally using SQLite.
+the name, company, phone, and email fields. Captured information and the image
+path are stored locally using SQLite. The latest version recognizes both Latin
+and Chinese text so Chinese business cards are supported out of the box.
 
 ## Features
 - Capture an image using the device camera.

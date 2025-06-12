@@ -96,13 +96,27 @@ class _AddCardPageState extends State<AddCardPage> {
 
   Future<void> _performOCR(File file) async {
     final inputImage = InputImage.fromFile(file);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-    await textRecognizer.close();
 
-    final lines = recognizedText.text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    // Run text recognition for both Latin and Chinese scripts to better handle
+    // multilingual business cards.
+    final latinRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final chineseRecognizer =
+        TextRecognizer(script: TextRecognitionScript.chinese);
+    final latinText = await latinRecognizer.processImage(inputImage);
+    final chineseText = await chineseRecognizer.processImage(inputImage);
+    await latinRecognizer.close();
+    await chineseRecognizer.close();
+
+    final combined = '${latinText.text}\n${chineseText.text}'.trim();
+    final lines = combined
+        .split('\n')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
     final phoneRegex = RegExp(r'\+?[0-9\s\-]{7,}');
     final emailRegex = RegExp(r'\S+@\S+\.\S+');
+    final candidates = <String>[];
 
     for (final line in lines) {
       if (emailRegex.hasMatch(line) && _emailController.text.isEmpty) {
@@ -113,13 +127,16 @@ class _AddCardPageState extends State<AddCardPage> {
         _phoneController.text = phoneRegex.firstMatch(line)!.group(0)!;
         continue;
       }
+      candidates.add(line);
     }
-    if (lines.isNotEmpty && _nameController.text.isEmpty) {
-      _nameController.text = lines.first;
+
+    if (_nameController.text.isEmpty && candidates.isNotEmpty) {
+      _nameController.text = candidates.first;
     }
-    if (lines.length > 1 && _companyController.text.isEmpty) {
-      _companyController.text = lines[1];
+    if (_companyController.text.isEmpty && candidates.length > 1) {
+      _companyController.text = candidates[1];
     }
+
     setState(() {});
   }
 
