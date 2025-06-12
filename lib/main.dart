@@ -97,17 +97,22 @@ class _AddCardPageState extends State<AddCardPage> {
   Future<void> _performOCR(File file) async {
     final inputImage = InputImage.fromFile(file);
 
-    // Run text recognition for both Latin and Chinese scripts to better handle
-    // multilingual business cards.
+    // Run text recognition for both Latin and Chinese scripts when available.
     final latinRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final chineseRecognizer =
-        TextRecognizer(script: TextRecognitionScript.chinese);
     final latinText = await latinRecognizer.processImage(inputImage);
-    final chineseText = await chineseRecognizer.processImage(inputImage);
     await latinRecognizer.close();
-    await chineseRecognizer.close();
 
-    final combined = '${latinText.text}\n${chineseText.text}'.trim();
+    String chineseText = '';
+    try {
+      final chineseRecognizer =
+          TextRecognizer(script: TextRecognitionScript.chinese);
+      chineseText = (await chineseRecognizer.processImage(inputImage)).text;
+      await chineseRecognizer.close();
+    } catch (_) {
+      // Chinese recognition libraries not present; ignore.
+    }
+
+    final combined = '${latinText.text}\n$chineseText'.trim();
     final lines = combined
         .split('\n')
         .map((e) => e.trim())
