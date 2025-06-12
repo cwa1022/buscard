@@ -94,15 +94,50 @@ class _AddCardPageState extends State<AddCardPage> {
   String orientation = 'horizontal';
   File? imageFile;
 
+
   Future<void> _performOCR(File file) async {
     final inputImage = InputImage.fromFile(file);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
-    await textRecognizer.close();
 
-    final lines = recognizedText.text.split('\n').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-    final phoneRegex = RegExp(r'\+?[0-9\s\-]{7,}');
-    final emailRegex = RegExp(r'\S+@\S+\.\S+');
+    // Run text recognition for both Latin and Chinese scripts when available.
+    final latinRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    final latinText = await latinRecognizer.processImage(inputImage);
+    await latinRecognizer.close();
+
+    String chineseText = '';
+    try {
+      final chineseRecognizer =
+          TextRecognizer(script: TextRecognitionScript.chinese);
+      chineseText = (await chineseRecognizer.processImage(inputImage)).text;
+      await chineseRecognizer.close();
+    } catch (_) {
+      // Chinese recognition libraries not present; ignore.
+    }
+
+    final combined = '${latinText.text}\n$chineseText'.trim();
+    final lines = combined
+        .split('\\n')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    // More permissive phone detection supporting various formats
+    final phoneRegex = RegExp(
+        r'(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}');
+    final emailRegex = RegExp(r'\\S+@\\S+\\.\\S+');
+
+    bool isCompany(String text) {
+      const keywords = ['公司', '企業', '股份', '有限公司', 'Inc', 'Corp', 'Co.', 'LLC'];
+      return keywords.any((k) => text.contains(k));
+    }
+
+    bool isLikelyName(String text) {
+      final zhName = RegExp(r'^[\\u4e00-\\u9fa5]{2,4}$');
+      final enName = RegExp(r'^[A-Z][a-z]+\\s[A-Z][a-z]+$');
+      return zhName.hasMatch(text) || enName.hasMatch(text);
+    }
+
+    String? name;
+    String? company;
 
     for (final line in lines) {
       if (emailRegex.hasMatch(line) && _emailController.text.isEmpty) {
@@ -113,13 +148,19 @@ class _AddCardPageState extends State<AddCardPage> {
         _phoneController.text = phoneRegex.firstMatch(line)!.group(0)!;
         continue;
       }
+      if (company == null && isCompany(line)) {
+        company = line;
+        continue;
+      }
+      if (name == null && isLikelyName(line)) {
+        name = line;
+        continue;
+      }
     }
-    if (lines.isNotEmpty && _nameController.text.isEmpty) {
-      _nameController.text = lines.first;
-    }
-    if (lines.length > 1 && _companyController.text.isEmpty) {
-      _companyController.text = lines[1];
-    }
+
+    _nameController.text = name ?? (lines.isNotEmpty ? lines.first : '');
+    _companyController.text = company ?? '';
+
     setState(() {});
   }
 
