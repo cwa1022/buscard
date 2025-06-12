@@ -120,8 +120,9 @@ class _AddCardPageState extends State<AddCardPage> {
         .where((e) => e.isNotEmpty)
         .toList();
 
-    final phoneRegex =
-        RegExp(r'(\\+?\\d{1,4}[\\s-]?)?(\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}');
+    // More permissive phone detection supporting various formats
+    final phoneRegex = RegExp(
+        r'(?:\\+?\\d{1,4}[\\s-]?)?(?:\\(?\\d{2,4}\\)?[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}');
     final emailRegex = RegExp(r'\\S+@\\S+\\.\\S+');
 
     bool isCompany(String text) {
@@ -130,8 +131,8 @@ class _AddCardPageState extends State<AddCardPage> {
     }
 
     bool isLikelyName(String text) {
-      final zhName = RegExp(r'^[\\u4e00-\\u9fa5]{2,4}\\$');
-      final enName = RegExp(r'^[A-Z][a-z]+\\s[A-Z][a-z]+\\$');
+      final zhName = RegExp(r'^[\\u4e00-\\u9fa5]{2,4}$');
+      final enName = RegExp(r'^[A-Z][a-z]+\\s[A-Z][a-z]+$');
       return zhName.hasMatch(text) || enName.hasMatch(text);
     }
 
